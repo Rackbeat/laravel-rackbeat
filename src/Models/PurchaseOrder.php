@@ -31,4 +31,21 @@ class PurchaseOrder extends Model
             return json_decode((string)$response->getBody());
         } );
     }
+
+    public function convertToInvoice($book = true)
+    {
+
+        return $this->request->handleWithExceptions( function () use ($book){
+
+            $data = [
+                'book'    => $book,
+            ];
+
+            $response = $this->request->client->post("{$this->entity}/{$this->url_friendly_id}/convert-to-invoice", [
+                'json' => $data,
+            ] );
+            
+            return json_decode((string)$response->getBody());
+        } );
+    }
 }
