@@ -219,6 +219,30 @@ class Builder
 		} );
 	}
 
+	/**
+	 * Directly update an entity without finding it first.
+	 *
+	 * @param $id
+	 * @param $data
+	 *
+	 * @return mixed
+	 * @throws \Rackbeat\Exceptions\RackbeatClientException
+	 * @throws \Rackbeat\Exceptions\RackbeatRequestException
+	 */
+	public function update( $id, $data ) {
+		return $this->request->handleWithExceptions( function () use ( $id, $data ) {
+
+			$response = $this->request->client->put("{$this->entity}/{$id}", [
+				'json' => $data,
+			]);
+
+
+			$responseData = $this->getResponse( $response );
+
+			return new $this->model($this->request, $responseData->first());
+		} );
+	}
+
 	public function getEntity() {
 		return $this->entity;
 	}
