@@ -12,12 +12,12 @@ class ProjectBuilder extends Builder
 	public function upsert($data): Project
 	{
 		return $this->request->handleWithExceptions(function () use ($data) {
-		    $response =$this->request->client->post("{$this->entity}/upsert", [
-			'json' => $data
-		    ]);
-		    $responseData = $this->getResponse($response);
+			$response =$this->request->client->post("{$this->entity}/upsert", [
+				'json' => $data
+			]);
+			$responseData = $this->getResponse($response);
 
-		    return $this->populateModelsFromResponse($responseData->first());
+			return $this->populateModelsFromResponse($responseData->first());
 		});
 	}
 }
