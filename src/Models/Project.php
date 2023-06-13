@@ -2,7 +2,7 @@
 
 namespace Rackbeat\Models;
 
-use Rackbeat\Client\Utils\Model;
+use Rackbeat\Utils\Model;
 
 class Project extends Model
 {
