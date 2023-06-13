@@ -1,6 +1,6 @@
 <?php
 
-namespace Rackbeat\Client\Builders;
+namespace Rackbeat\Builders;
 
 use Rackbeat\Models\Project;
 
