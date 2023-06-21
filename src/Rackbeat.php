@@ -26,6 +26,7 @@ use Rackbeat\Builders\PluginBuilder;
 use Rackbeat\Builders\ProductBuilder;
 use Rackbeat\Builders\ProductGroupBuilder;
 use Rackbeat\Builders\ProductionOrderBuilder;
+use Rackbeat\Builders\ProjectBuilder;
 use Rackbeat\Builders\PurchaseOrderBuilder;
 use Rackbeat\Builders\SettingsBuilder;
 use Rackbeat\Builders\SupplierBuilder;
@@ -294,6 +295,13 @@ class Rackbeat
      */
     public function supplier_contacts() {
         return new SupplierContactBuilder( $this->request );
+    }
+
+    /**
+     * @return ProjectBuilder()
+     */
+    public function projects() {
+        return new ProjectBuilder( $this->request );
     }
 
 	/**
