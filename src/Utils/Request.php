@@ -1,13 +1,5 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: nts
- * Date: 31.3.18.
- * Time: 16.53
- */
-
 namespace Rackbeat\Utils;
-
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
@@ -15,7 +7,10 @@ use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\MessageFormatter;
 use GuzzleHttp\Middleware;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Http;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Rackbeat\Exceptions\RackbeatClientException;
@@ -29,34 +24,35 @@ class Request
      */
     public $client;
 
+	public array $options = [];
+	public array $headers = [];
+	public bool $enableLog = false;
+	public ?string $logPath = null;
+
     /**
      * Request constructor.
      *
-     * @param null $token
+     * @param null  $token
      * @param array $options
      * @param array $headers
-     * @param bool $enable_log
-     * @param null $log_path
+     * @param bool  $enable_log
+     * @param null  $log_path
      */
-    public function __construct($token = null, $options = [], $headers = [], $enable_log = false, $log_path = null)
+    public function __construct($token = null, array $options = [], array $headers = [], bool $enable_log = false, $log_path = null)
     {
-        $token = $token ?? Config::get('rackbeat.token');
-        $headers = array_merge($headers, [
+		$this->options = $options;
+	    $this->headers = array_merge( $headers, [
+		    'User-Agent'    => Config::get( 'rackbeat.user_agent' ),
+		    'Accept'        => 'application/json; charset=utf8',
+		    'Content-Type'  => 'application/json; charset=utf8',
+		    'Authorization' => 'Bearer ' . ( $token ?? Config::get( 'rackbeat.token' ) ),
+	    ] );
 
-            'User-Agent' => Config::get('rackbeat.user_agent'),
-            'Accept' => 'application/json; charset=utf8',
-            'Content-Type' => 'application/json; charset=utf8',
-            'Authorization' => 'Bearer ' . $token,
-        ]);
+	    $this->enableLog = $enable_log;
+	    $this->logPath   = $log_path;
 
-        $options = $this->addCustomMiddlewares($options, $enable_log, $log_path);
-
-        $options = array_merge($options, [
-
-            'base_uri' => Config::get('rackbeat.base_uri'),
-            'headers' => $headers,
-        ]);
-        $this->client = new Client($options);
+		// For legacy purposes (in case $client is used in integration directly..)
+		$this->client = $this->getClient()->buildClient();
     }
 
     /**
@@ -69,37 +65,18 @@ class Request
     public function handleWithExceptions( $callback )
     {
         try {
-
             return $callback();
-
-        } catch ( ClientException $exception ) {
-
+        } catch ( RequestException $exception ) {
             $message = $exception->getMessage();
             $code    = $exception->getCode();
 
-            if ( $exception->hasResponse() ) {
-
-                $message = (string) $exception->getResponse()->getBody();
-                $code    = $exception->getResponse()->getStatusCode();
+            if ( $exception->response ) {
+                $message = (string) $exception->response->body();
+                $code    = $exception->response->status();
             }
 
-            throw new RackbeatRequestException( $message, $code );
-
-        } catch ( ServerException $exception ) {
-
-            $message = $exception->getMessage();
-            $code    = $exception->getCode();
-
-            if ( $exception->hasResponse() ) {
-
-                $message = (string) $exception->getResponse()->getBody();
-                $code    = $exception->getResponse()->getStatusCode();
-            }
-
-            throw new RackbeatRequestException($message, $code);
-
+	        throw new RackbeatRequestException( $message, $code );
         } catch (\Exception $exception) {
-
             $message = $exception->getMessage();
             $code = $exception->getCode();
 
@@ -130,22 +107,14 @@ class Request
         );
     }
 
-    public function addCustomMiddlewares(array $options, $log, $log_path)
-    {
-        if (!empty($options['handler'])) {
-            $options['handler']->push($this->createThrottleMiddleware());
-        } else {
-            $stack = HandlerStack::create();
-
-            $stack->push($this->createThrottleMiddleware());
-            $options['handler'] = $stack;
-        }
-
-        if ($log) {
-
-            $options['handler']->push($this->createLoggerMiddleware($log_path));
-        }
-
-        return $options;
-    }
+	public function getClient(): PendingRequest
+	{
+		return Http::withHeaders( $this->headers )
+		           ->baseUrl( Config::get( 'rackbeat.base_uri' ) )
+		           ->withMiddleware( $this->createThrottleMiddleware() )
+		           ->withOptions( $this->options )
+		           ->when( $this->enableLog, function ( PendingRequest $request ) {
+			           return $request->withMiddleware( $this->createLoggerMiddleware( $this->logPath ) );
+		           } );
+	}
 }

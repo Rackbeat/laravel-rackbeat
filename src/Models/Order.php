@@ -22,10 +22,10 @@ class Order extends Model
 
 	public function getPDF() {
 		return $this->request->handleWithExceptions( function () {
-			$response = $this->request->client->get( "{$this->entity}/{$this->url_friendly_id}.pdf" );
+			$response = $this->request->getClient()->get( "{$this->entity}/{$this->url_friendly_id}.pdf" )->throw();
 
 
-			return json_decode( (string) $response->getBody() );
+			return $response->body();
 		} );
 	}
 
@@ -33,11 +33,9 @@ class Order extends Model
     {
 
         return $this->request->handleWithExceptions( function () {
+            $response = $this->request->getClient()->post("{$this->entity}/{$this->url_friendly_id}/reopen")->throw();
 
-            $response = $this->request->client->post("{$this->entity}/{$this->url_friendly_id}/reopen");
-
-
-            return json_decode((string)$response->getBody());
+            return $response->object();
         } );
     }
 
@@ -45,23 +43,20 @@ class Order extends Model
     {
         return $this->request->handleWithExceptions(function () {
 
-            $response = $this->request->client->post("{$this->entity}/{$this->url_friendly_id}/create-shipment");
+            $response = $this->request->getClient()->post("{$this->entity}/{$this->url_friendly_id}/create-shipment")->throw();
 
 
-            return new OrderShipment($this->request, json_decode((string)$response->getBody())->order_shipment);
+            return new OrderShipment($this->request, $response->object()->order_shipment);
         });
     }
 
     public function shipments()
     {
-        return $this->request->handleWithExceptions(function () {
+        $builder = new OrderShipmentBuilder($this->request);
 
-            $builder = new OrderShipmentBuilder($this->request);
-
-            return $builder->get([
-                ['order_number', '=', $this->url_friendly_id],
-            ]);
-        });
+        return $builder->get([
+            ['order_number', '=', $this->url_friendly_id],
+        ]);
     }
 
     /**
@@ -74,23 +69,21 @@ class Order extends Model
     {
         return $this->request->handleWithExceptions(function () use ($book, $request) {
 
-            $response = $this->request->client->post("{$this->entity}/{$this->url_friendly_id}/convert-to-invoice?book=" . (($book === true) ? 'true' : 'false'), [
-                'json' => $request,
-            ]);
+            $response = $this->request->getClient()->asJson()->post(
+				"{$this->entity}/{$this->url_friendly_id}/convert-to-invoice?book=" . (($book === true) ? 'true' : 'false'),
+				$request
+            )->throw();
 
 
-            return (new CustomerInvoiceBuilder($this->request))->find(json_decode((string)$response->getBody(), false)->invoice_id);
+            return (new CustomerInvoiceBuilder($this->request))->find($response->object()->invoice_id);
         });
     }
 
     public function notes()
     {
-        return $this->request->handleWithExceptions(function () {
+        $builder = new OrderNoteBuilder($this->request);
+        $builder->setEntity(str_replace(':number', $this->url_friendly_id, $builder->getEntity()));
 
-            $builder = new OrderNoteBuilder($this->request);
-            $builder->setEntity(str_replace(':number', $this->url_friendly_id, $builder->getEntity()));
-
-            return $builder->get();
-        });
+        return $builder->get();
     }
 }

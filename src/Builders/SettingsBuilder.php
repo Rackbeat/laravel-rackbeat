@@ -35,10 +35,10 @@ class SettingsBuilder extends Builder
     {
         return $this->request->handleWithExceptions(function () {
 
-            $response = $this->request->client->get("{$this->entity}");
+            $response = $this->request->getClient()->get("{$this->entity}")->throw();
 
 
-            $responseData = json_decode((string)$response->getBody());
+            $responseData = $response->object();
             $fetchedItems = collect($responseData);
             $items = collect([]);
 

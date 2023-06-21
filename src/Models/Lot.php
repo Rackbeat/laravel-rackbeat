@@ -21,35 +21,25 @@ class Lot extends Model
 	public function variations( $variation_id = 1001 ) {
 		return $this->request->handleWithExceptions( function () use ( $variation_id ) {
 
-			$response = $this->request->client->get( "variations/{$this->url_friendly_id}/variation-matrix" );
+			$response = $this->request->getClient()->get( "variations/{$this->url_friendly_id}/variation-matrix" )->throw();
 
-
-			return json_decode( (string) $response->getBody() );
+			return $response->object();
 		} );
     }
 	
     public function location($number = null) {
-	return $this->request->handleWithExceptions(function () use ($number) {
+		return $this->request->handleWithExceptions(function () use ($number) {
+			$response = $this->request->getClient()->get("{$this->entity}/{$this->url_friendly_id}/locations" . (($number !== null) ? '/' . $number : ''))->throw();
 
-		$response = $this->request->client->get("{$this->entity}/{$this->url_friendly_id}/locations" . (($number !== null) ? '/' . $number : ''));
+			$response = $response->object();
 
+			if (isset($response->lot_locations)) {
+				return collect($response->lot_locations);
+			}
 
-		$response = json_decode((string)$response->getBody());
-
-		if (isset($response->lot_locations)) {
-
-			return collect($response->lot_locations);
-		} else if (isset($response->lot_location)) {
-
-			return $response->lot_location;
-		} else {
-
-			return $response;
-		}
-
-
-	} );
-}	
+			return $response->lot_location ?? $response;
+		} );
+	}
 
     /**
      * Show reporting ledger for desired product https://app.rackbeat.com/reporting/ledger/{product_number}
@@ -58,11 +48,9 @@ class Lot extends Model
     public function ledger()
     {
         return $this->request->handleWithExceptions( function () {
+            $response = $this->request->getClient()->get("reports/ledger/{$this->{ $this->primaryKey } }")->throw();
 
-            $response = $this->request->client->get("reports/ledger/{$this->{ $this->primaryKey } }");
-
-
-            return collect(json_decode((string)$response->getBody())->ledger_items);
+            return collect(data_get($response->object(), 'ledger_items'));
 
         } );
     }

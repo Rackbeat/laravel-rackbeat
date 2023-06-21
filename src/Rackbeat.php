@@ -314,9 +314,10 @@ class Rackbeat
 	 * @return mixed
 	 */
 	public function self() {
-		$response = $this->request->client->get( 'self' );
+		return $this->request->handleWithExceptions(function() {
+			$response = $this->request->getClient()->get( 'self' )->throw();
 
-
-		return json_decode( (string) $response->getBody() );
+			return $response->object();
+		});
     }
 }

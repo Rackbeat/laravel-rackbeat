@@ -3,7 +3,7 @@
 
 namespace Rackbeat\Builders;
 
-use Psr\Http\Message\ResponseInterface;
+use Illuminate\Http\Client\Response;
 use Rackbeat\Traits\ApiFiltering;
 use Rackbeat\Utils\Model;
 use Rackbeat\Utils\Request;
@@ -37,8 +37,7 @@ class Builder
 		$urlFilters = $this->parseFilters( $filters );
 
 		return $this->request->handleWithExceptions( function () use ( $urlFilters ) {
-
-			$response     = $this->request->client->get( "{$this->entity}{$urlFilters}" );
+			$response     = $this->request->getClient()->get( "{$this->entity}{$urlFilters}" )->throw();
 			$fetchedItems = $this->getResponse( $response );
 
 			return $this->populateModelsFromResponse( $fetchedItems->first() );
@@ -92,10 +91,9 @@ class Builder
 			$urlFilters = $this->parseFilters( $filters );
 
 			return $this->request->handleWithExceptions( function () use ( $urlFilters ) {
+				$response = $this->request->getClient()->get( "{$this->entity}{$urlFilters}" )->throw();
 
-				$response = $this->request->client->get( "{$this->entity}{$urlFilters}" );
-
-				$responseData = json_decode( (string) $response->getBody() );
+				$responseData = $response->object();
 				$fetchedItems = $this->getResponse( $response );
 				$pages        = $responseData->pages;
 				$items        = $this->populateModelsFromResponse( $fetchedItems->first() );
@@ -133,16 +131,14 @@ class Builder
 		$page = 1;
 		$this->limit($chunkSize);
 
-		$items = collect();
-
 		$response = function ($page) {
 			$this->page($page);
 			$urlFilters = $this->parseFilters();
 
 			return $this->request->handleWithExceptions(function () use ($urlFilters) {
-				$response = $this->request->client->get("{$this->entity}{$urlFilters}");
+				$response = $this->request->getClient()->get("{$this->entity}{$urlFilters}")->throw();
 
-				$responseData = json_decode((string) $response->getBody());
+				$responseData = $response->object();
 				$fetchedItems = $this->getResponse($response);
 				$pages        = $responseData->pages;
 				$items        = $this->populateModelsFromResponse($fetchedItems->first());
@@ -191,7 +187,7 @@ class Builder
 		$id         = rawurlencode( rawurlencode( $id ) );
 
 		return $this->request->handleWithExceptions( function () use ( $id, $urlFilters ) {
-			$response     = $this->request->client->get( "{$this->entity}/{$id}{$urlFilters}" );
+			$response     = $this->request->getClient()->get( "{$this->entity}/{$id}{$urlFilters}" )->throw();
 			$responseData = $this->getResponse( $response );
 
 			return $this->populateModelsFromResponse( $responseData->first() );
@@ -209,10 +205,7 @@ class Builder
 	 */
 	public function create( $data ) {
 		return $this->request->handleWithExceptions( function () use ( $data ) {
-
-			$response     = $this->request->client->post( $this->entity, [
-				'json' => $data,
-			] );
+			$response     = $this->request->getClient()->asJson()->post( $this->entity, $data)->throw();
 			$responseData = $this->getResponse( $response );
 
 			return $this->populateModelsFromResponse( $responseData->first() );
@@ -231,11 +224,7 @@ class Builder
 	 */
 	public function update( $id, $data ) {
 		return $this->request->handleWithExceptions( function () use ( $id, $data ) {
-
-			$response = $this->request->client->put("{$this->entity}/{$id}", [
-				'json' => $data,
-			]);
-
+			$response = $this->request->getClient()->asJson()->put("{$this->entity}/{$id}", $data)->throw();
 
 			$responseData = $this->getResponse( $response );
 
@@ -257,7 +246,7 @@ class Builder
 		return $this->model;
 	}
 
-	protected function getResponse( ResponseInterface $response ) {
-		return collect( json_decode( (string) $response->getBody() ) );
+	protected function getResponse( Response $response ) {
+		return collect( $response->object() );
 	}
 }
