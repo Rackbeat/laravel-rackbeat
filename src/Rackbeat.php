@@ -320,4 +320,8 @@ class Rackbeat
 			return $response->object();
 		});
     }
+
+	public function getClient() {
+		return $this->request->getClient();
+	}
 }
