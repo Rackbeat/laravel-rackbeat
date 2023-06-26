@@ -58,9 +58,7 @@ class CustomerInvoice extends Model
 				$body['mail'] = $send_email;
 			}
 
-			$response = $this->request->client->post( "{$this->entity}/{$this->url_friendly_id}/book" . $query, [
-                'json' => $body,
-            ]);
+			$response = $this->request->getClient()->asJson()->post( "{$this->entity}/{$this->url_friendly_id}/book" . $query, $body)->throw();
 
 
             return json_decode((string)$response->getBody());
@@ -70,10 +68,9 @@ class CustomerInvoice extends Model
     public function getPDF()
     {
         return $this->request->handleWithExceptions(function () {
-            $response = $this->request->client->get("{$this->entity}/{$this->url_friendly_id}.pdf");
+            $response = $this->request->getClient()->get("{$this->entity}/{$this->url_friendly_id}.pdf")->throw();
 
-
-            return json_decode((string)$response->getBody());
+            return $response->body();
         });
     }
 }

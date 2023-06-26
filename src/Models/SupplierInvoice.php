@@ -30,28 +30,22 @@ class SupplierInvoice extends Model
 	 */
 	public function book( $mark_as_received = false, $use_invoice_date = false ) {
 		return $this->request->handleWithExceptions( function () use ( $mark_as_received, $use_invoice_date ) {
-
-			$data = [
+			$response = $this->request->getClient()->asJson()->post( "{$this->entity}/{$this->url_friendly_id}/book", [
 				'mark_received'    => $mark_as_received,
 				'use_invoice_date' => $use_invoice_date
-			];
-
-			$response = $this->request->client->post( "{$this->entity}/{$this->url_friendly_id}/book", [
-				'json' => $data,
 			] );
 
 
-			return json_decode( (string) $response->getBody() );
+			return $response->object();
 		});
     }
 
     public function getPDF()
     {
         return $this->request->handleWithExceptions(function () {
-            $response = $this->request->client->get("{$this->entity}/{$this->url_friendly_id}.pdf");
+            $response = $this->request->getClient()->get("{$this->entity}/{$this->url_friendly_id}.pdf")->throw();
 
-
-            return json_decode((string)$response->getBody());
+	        return $response->body();
         });
     }
 }

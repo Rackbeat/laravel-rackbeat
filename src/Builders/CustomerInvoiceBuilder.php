@@ -29,11 +29,8 @@ class CustomerInvoiceBuilder extends Builder
     public function markBook( $number, array $data = [] )
     {
         return $this->request->handleWithExceptions( function () use ( $number, $data ) {
-
-            $response     = $this->request->client->post( $this->entity . '/' . $number . '/book' , [
-                'json' => $data,
-            ]);
-            $responseData = $this->getResponse( $response );
+            $response     = $this->request->getClient()->asJson()->post( $this->entity . '/' . $number . '/book' , $data)->throw();
+            return $this->getResponse( $response );
         } );
     } 
 }

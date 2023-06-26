@@ -26,6 +26,7 @@ use Rackbeat\Builders\PluginBuilder;
 use Rackbeat\Builders\ProductBuilder;
 use Rackbeat\Builders\ProductGroupBuilder;
 use Rackbeat\Builders\ProductionOrderBuilder;
+use Rackbeat\Builders\ProjectBuilder;
 use Rackbeat\Builders\PurchaseOrderBuilder;
 use Rackbeat\Builders\SettingsBuilder;
 use Rackbeat\Builders\SupplierBuilder;
@@ -296,6 +297,13 @@ class Rackbeat
         return new SupplierContactBuilder( $this->request );
     }
 
+    /**
+     * @return ProjectBuilder()
+     */
+    public function projects() {
+        return new ProjectBuilder( $this->request );
+    }
+
 	/**
 	 * @return SettingsBuilder
 	 */
@@ -314,9 +322,14 @@ class Rackbeat
 	 * @return mixed
 	 */
 	public function self() {
-		$response = $this->request->client->get( 'self' );
+		return $this->request->handleWithExceptions(function() {
+			$response = $this->request->getClient()->get( 'self' )->throw();
 
-
-		return json_decode( (string) $response->getBody() );
+			return $response->object();
+		});
     }
+
+	public function getClient() {
+		return $this->request->getClient();
+	}
 }

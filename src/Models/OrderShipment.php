@@ -30,16 +30,12 @@ class OrderShipment extends Model
     {
         return $this->request->handleWithExceptions(function () use ($pick) {
 
-            $response = $this->request->client->post("orders/shipments/{$this->url_friendly_id}/mark-shipped", [
-
-                'json' => [
-
-                    'pick' => $pick,
-                ],
-            ]);
+            $response = $this->request->getClient()->asJson()->post("orders/shipments/{$this->url_friendly_id}/mark-shipped", [
+	            'pick' => $pick,
+            ])->throw();
 
 
-            return json_decode((string)$response->getBody());
+            return $response->object();
         });
     }
 }

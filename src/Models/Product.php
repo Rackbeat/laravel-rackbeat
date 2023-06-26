@@ -45,48 +45,37 @@ class Product extends Model
 				}
 			}
 
-			$response = $this->request->client->get( "{$this->entity}/{$this->url_friendly_id}/variation-matrix" .
-			                                         $query );
+			$response = $this->request->getClient()->get( "{$this->entity}/{$this->url_friendly_id}/variation-matrix{$query}")->throw();
 
 
 			$isHtml   = filter_var( Arr::get( $filter, 'html', false ), FILTER_VALIDATE_BOOLEAN );
-			$response = (string) $response->getBody();
 
-			return $isHtml ? $response : json_decode( $response );
+			return $isHtml ? $response->body() : $response->object();
 		} );
 
 	}
 
 	public function variations( $variation_id = 1001 ) {
 		return $this->request->handleWithExceptions( function () use ( $variation_id ) {
+			$response = $this->request->getClient()->get("variations/{$this->url_friendly_id}/variation-matrix")->throw();
 
-			$response = $this->request->client->get("variations/{$this->url_friendly_id}/variation-matrix");
-
-
-			return (string) $response->getBody();
+			return $response->body();
 		} );
 	}
 
 	public function location($number = null) {
 		return $this->request->handleWithExceptions(function () use ($number) {
 
-			$response = $this->request->client->get("{$this->entity}/{$this->url_friendly_id}/locations" . (($number !== null) ? '/' . $number : ''));
+			$response = $this->request->getClient()->get("{$this->entity}/{$this->url_friendly_id}/locations" . (($number !== null) ? '/' . $number : ''))->throw();
 
 
-			$response = json_decode((string)$response->getBody());
+			$response = $response->object();
 
 			if (isset($response->product_locations)) {
-
 				return collect($response->product_locations);
-			} else if (isset($response->product_location)) {
-
-				return $response->product_location;
-			} else {
-
-				return $response;
 			}
 
-
+			return $response->product_location ?? $response;
 		} );
 	}
 
@@ -96,25 +85,18 @@ class Product extends Model
 	 */
 	public function ledger() {
 		return $this->request->handleWithExceptions( function () {
+			$response = $this->request->getClient()->get("reports/ledger/{$this->{ $this->primaryKey } }")->throw();
 
-			$response =
-				$this->request->client->get("reports/ledger/{$this->{ $this->primaryKey } }");
-
-
-			return collect(json_decode((string)$response->getBody())->ledger_items);
-
+			return collect($response->object()->ledger_items);
 		} );
 	}
 
 	public function fields() {
 
 		return $this->request->handleWithExceptions( function () {
+			$response = $this->request->getClient()->get("{$this->entity}/{$this->url_friendly_id}/fields")->throw();
 
-			$response = $this->request->client->get("{$this->entity}/{$this->url_friendly_id}/fields");
-
-
-			return collect(json_decode((string)$response->getBody())->field_values);
-
+			return collect($response->object()->field_values);
 		} );
 	}
 }

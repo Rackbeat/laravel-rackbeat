@@ -19,10 +19,10 @@ class ProductionOrder extends Model
 
 	public function getPDF() {
 		return $this->request->handleWithExceptions( function () {
-			$response = $this->request->client->get( "{$this->entity}/{$this->url_friendly_id}.pdf" );
+			$response = $this->request->getClient()->get( "{$this->entity}/{$this->url_friendly_id}.pdf" )->throw();
 
 
-			return json_decode( (string) $response->getBody() );
+			return $response->body();
 		} );
 	}
 }

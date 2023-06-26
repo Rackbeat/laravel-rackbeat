@@ -68,22 +68,17 @@ class Model
 
 	public function delete() {
 		return $this->request->handleWithExceptions( function () {
+			$response = $this->request->getClient()->delete("{$this->entity}/{$this->url_friendly_id}")->throw();
 
-			$response = $this->request->client->delete("{$this->entity}/{$this->url_friendly_id}");
 
-
-			return json_decode((string)$response->getBody());
+			return $response->object();
 		} );
 	}
 
 	public function update( $data = [] ) {
 
 		return $this->request->handleWithExceptions( function () use ( $data ) {
-
-			$response = $this->request->client->put("{$this->entity}/{$this->url_friendly_id}", [
-				'json' => $data,
-			]);
-
+			$response = $this->request->getClient()->asJson()->put("{$this->entity}/{$this->url_friendly_id}", $data)->throw();
 
 			$responseData = $this->getResponse( $response );
 

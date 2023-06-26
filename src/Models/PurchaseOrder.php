@@ -13,10 +13,10 @@ class PurchaseOrder extends Model
 
 	public function getPDF() {
 		return $this->request->handleWithExceptions( function () {
-			$response = $this->request->client->get( "{$this->entity}/{$this->url_friendly_id}.pdf" );
+			$response = $this->request->getClient()->get( "{$this->entity}/{$this->url_friendly_id}.pdf" )->throw();
 
 
-			return json_decode( (string) $response->getBody() );
+			return $response->body();
 		} );
 	}
 
@@ -25,27 +25,21 @@ class PurchaseOrder extends Model
 
         return $this->request->handleWithExceptions( function () {
 
-            $response = $this->request->client->post("{$this->entity}/{$this->url_friendly_id}/reopen");
+            $response = $this->request->getClient()->post("{$this->entity}/{$this->url_friendly_id}/reopen")->throw();
 
 
-            return json_decode((string)$response->getBody());
+            return $response->object();
         } );
     }
 
     public function convertToInvoice($book = true)
     {
-
         return $this->request->handleWithExceptions( function () use ($book){
-
-            $data = [
-                'book'    => $book,
-            ];
-
-            $response = $this->request->client->post("{$this->entity}/{$this->url_friendly_id}/convert-to-invoice", [
-                'json' => $data,
-            ] );
+            $response = $this->request->getClient()->asJson()->post("{$this->entity}/{$this->url_friendly_id}/convert-to-invoice", [
+	            'book'    => $book,
+            ])->throw();
             
-            return json_decode((string)$response->getBody());
+            return $response->object();
         } );
     }
 }

@@ -21,31 +21,24 @@ class DraftOrder extends Model
 
 	public function getPDF() {
 		return $this->request->handleWithExceptions( function () {
-			$response = $this->request->client->get( "{$this->entity}/{$this->url_friendly_id}.pdf" );
+			$response = $this->request->getClient()->get( "{$this->entity}/{$this->url_friendly_id}.pdf" )->throw();
 
-
-			return json_decode( (string) $response->getBody() );
+			return $response->body();
 		} );
 	}
 
 	public function shipments() {
-		return $this->request->handleWithExceptions( function () {
+		$builder = new OrderShipmentBuilder( $this->request );
 
-			$builder = new OrderShipmentBuilder( $this->request );
-
-			return $builder->get( [
-				[ 'order_number', '=', $this->url_friendly_id ],
-			] );
-		} );
+		return $builder->get( [
+			[ 'order_number', '=', $this->url_friendly_id ],
+		] );
 	}
 
 	public function notes() {
-		return $this->request->handleWithExceptions( function () {
+		$builder = new OrderNoteBuilder( $this->request );
+		$builder->setEntity( str_replace( ':number', $this->url_friendly_id, $builder->getEntity() ) );
 
-			$builder = new OrderNoteBuilder( $this->request );
-			$builder->setEntity( str_replace( ':number', $this->url_friendly_id, $builder->getEntity() ) );
-
-			return $builder->get();
-		} );
+		return $builder->get();
 	}
 }

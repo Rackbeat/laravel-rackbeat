@@ -19,7 +19,7 @@ class WebhookBuilder extends Builder
     public function deleteWebhook(int $id)
     {
         return $this->request->handleWithExceptions( function () use ( $id ) {
-            $response     = $this->request->client->delete( "{$this->entity}/{$id}" );
+            $this->request->getClient()->delete( "{$this->entity}/{$id}" )->throw();
         } );
     }
 }
