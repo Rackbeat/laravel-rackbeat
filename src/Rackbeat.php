@@ -33,6 +33,7 @@ use Rackbeat\Builders\SupplierBuilder;
 use Rackbeat\Builders\SupplierContactBuilder;
 use Rackbeat\Builders\SupplierGroupBuilder;
 use Rackbeat\Builders\SupplierInvoiceBuilder;
+use Rackbeat\Builders\UserBuilder;
 use Rackbeat\Builders\Variation\VariationBuilder;
 use Rackbeat\Builders\WebhookBuilder;
 use Rackbeat\Utils\Request;
@@ -316,6 +317,14 @@ class Rackbeat
 	 */
 	public function lineables(): LineableBuilder {
 		return new LineableBuilder( $this->request );
+	}
+
+	/**
+	 * @return \Rackbeat\Builders\UserBuilder
+	 */
+	public function users()
+	{
+		return new UserBuilder( $this->request );
 	}
 
 	/**
