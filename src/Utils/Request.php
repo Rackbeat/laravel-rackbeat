@@ -28,6 +28,7 @@ class Request
 	public array $headers = [];
 	public bool $enableLog = false;
 	public ?string $logPath = null;
+	public ?string $rateLimitingToken = null;
 
     /**
      * Request constructor.
@@ -40,16 +41,18 @@ class Request
      */
     public function __construct($token = null, array $options = [], array $headers = [], bool $enable_log = false, $log_path = null)
     {
+	    $apiToken = $token ?? Config::get( 'rackbeat.token' );
 		$this->options = $options;
 	    $this->headers = array_merge( $headers, [
 		    'User-Agent'    => Config::get( 'rackbeat.user_agent' ),
 		    'Accept'        => 'application/json; charset=utf8',
 		    'Content-Type'  => 'application/json; charset=utf8',
-		    'Authorization' => 'Bearer ' . ( $token ?? Config::get( 'rackbeat.token' ) ),
+		    'Authorization' => 'Bearer ' . $apiToken,
 	    ] );
 
 	    $this->enableLog = $enable_log;
 	    $this->logPath   = $log_path;
+	    $this->rateLimitingToken = md5($apiToken);
 
 		// For legacy purposes (in case $client is used in integration directly..)
 		$this->client = $this->getClient()->buildClient();
@@ -86,7 +89,7 @@ class Request
 
     public function createThrottleMiddleware()
     {
-        return RateLimiterMiddleware::perMinute(Config::get('rackbeat.api_limit', 480), new RateLimiterStore());
+        return RateLimiterMiddleware::perMinute(Config::get('rackbeat.api_limit', 480), new RateLimiterStore($this->rateLimitingToken));
     }
 
     public function createLoggerMiddleware($log_path = null)
@@ -113,7 +116,7 @@ class Request
 		           ->baseUrl( Config::get( 'rackbeat.base_uri' ) )
 		           ->withMiddleware( $this->createThrottleMiddleware() )
 		           ->withOptions( $this->options )
-				   ->retry( 2, 5 * 1000, function ( \Throwable $throwable ) { return $throwable->getCode() >= 500; } )
+				   ->retry( 3, 5 * 1000, function ( \Throwable $throwable ) { return $throwable->getCode() >= 500 || $throwable->getCode() === 429; } )
 		           ->when( $this->enableLog, function ( PendingRequest $request ) {
 			           return $request->withMiddleware( $this->createLoggerMiddleware( $this->logPath ) );
 		           } );

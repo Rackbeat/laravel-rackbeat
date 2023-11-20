@@ -10,13 +10,20 @@ use Spatie\GuzzleRateLimiterMiddleware\Store;
 
 class RateLimiterStore implements Store
 {
+    public ?string $rateLimitingToken = null;
+
+    public function __construct($rateLimitingToken) {
+        $this->rateLimitingToken = (string) $rateLimitingToken;
+    }
+
+    
     public function get(): array
     {
-        return Cache::get('rate-limiter', []);
+        return Cache::get('rate-limiter-' . $this->rateLimitingToken, []);
     }
 
     public function push(int $timestamp)
     {
-        Cache::put('rate-limiter', array_merge($this->get(), [$timestamp]), Carbon::now()->addMinute());
+        Cache::put('rate-limiter-' . $this->rateLimitingToken, array_merge($this->get(), [$timestamp]), Carbon::now()->addMinute());
     }
 }
