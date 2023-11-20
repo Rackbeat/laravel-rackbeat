@@ -113,7 +113,7 @@ class Request
 		           ->baseUrl( Config::get( 'rackbeat.base_uri' ) )
 		           ->withMiddleware( $this->createThrottleMiddleware() )
 		           ->withOptions( $this->options )
-				   ->retry( 2, 5 * 1000, function ( \Throwable $throwable ) { return $throwable->getCode() >= 500; } )
+				   ->retry( 3, 5 * 1000, function ( \Throwable $throwable ) { return $throwable->getCode() >= 500 || $throwable->getCode() === 429; } )
 		           ->when( $this->enableLog, function ( PendingRequest $request ) {
 			           return $request->withMiddleware( $this->createLoggerMiddleware( $this->logPath ) );
 		           } );
