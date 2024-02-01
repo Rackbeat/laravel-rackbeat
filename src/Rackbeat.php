@@ -285,17 +285,17 @@ class Rackbeat
      *
      * @return CustomerContactBuilder
      */
-    public function customer_contacts() {
-	    return new CustomerContactBuilder( $this->request );
+    public function customer_contacts($customer_number = null) {
+	    return new CustomerContactBuilder( $this->request, $customer_number );
     }
-    
+
     /**
      * This resource requires you to do $builder->setEntity and to replace {supplier} in it with desired supplier, otherwise it won't work
      *
      * @return SupplierContactBuilder
      */
-    public function supplier_contacts() {
-        return new SupplierContactBuilder( $this->request );
+    public function supplier_contacts($supplier_number = null) {
+        return new SupplierContactBuilder( $this->request, $supplier_number );
     }
 
     /**
