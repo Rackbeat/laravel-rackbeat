@@ -10,10 +10,10 @@
   ],
   "require": {
 	  "php": ">=7.4",
-	  "laravel/framework": "^5.5|^6|^7|^8",
+	  "laravel/framework": "^5.5|^6|^7|^8|^9|^10|^11",
 	  "guzzlehttp/guzzle": "*",
 	  "ext-json": "*",
-	  "spatie/guzzle-rate-limiter-middleware": "^1.0",
+	  "spatie/guzzle-rate-limiter-middleware": "^1.0|^2.0",
     "illuminate/http": "*"
   },
   "autoload": {
