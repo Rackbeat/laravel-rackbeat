@@ -328,6 +328,14 @@ class Rackbeat
 	}
 
 	/**
+	 * @return \Rackbeat\Builders\UnitBuilder
+	 */
+	public function units()
+	{
+		return new UnitBuilde( $this->request );
+	}
+
+	/**
 	 * @return mixed
 	 */
 	public function self() {
