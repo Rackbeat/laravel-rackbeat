@@ -33,6 +33,7 @@ use Rackbeat\Builders\SupplierBuilder;
 use Rackbeat\Builders\SupplierContactBuilder;
 use Rackbeat\Builders\SupplierGroupBuilder;
 use Rackbeat\Builders\SupplierInvoiceBuilder;
+use Rackbeat\Builders\UnitBuilder;
 use Rackbeat\Builders\UserBuilder;
 use Rackbeat\Builders\Variation\VariationBuilder;
 use Rackbeat\Builders\WebhookBuilder;
@@ -332,7 +333,7 @@ class Rackbeat
 	 */
 	public function units()
 	{
-		return new UnitBuilde( $this->request );
+		return new UnitBuilder( $this->request );
 	}
 
 	/**
