@@ -22,7 +22,7 @@ class RateLimiterStore implements Store
         return Cache::get('rate-limiter-' . $this->rateLimitingToken, []);
     }
 
-    public function push(int $timestamp)
+    public function push(int $timestamp, int $limit)
     {
         Cache::put('rate-limiter-' . $this->rateLimitingToken, array_merge($this->get(), [$timestamp]), Carbon::now()->addMinute()->addSeconds(15));
     }
