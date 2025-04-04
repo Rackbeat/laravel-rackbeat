@@ -27,6 +27,7 @@ use Rackbeat\Builders\ProductBuilder;
 use Rackbeat\Builders\ProductGroupBuilder;
 use Rackbeat\Builders\ProductionOrderBuilder;
 use Rackbeat\Builders\ProjectBuilder;
+use Rackbeat\Builders\DepartmentBuilder;
 use Rackbeat\Builders\PurchaseOrderBuilder;
 use Rackbeat\Builders\SettingsBuilder;
 use Rackbeat\Builders\SupplierBuilder;
@@ -335,6 +336,13 @@ class Rackbeat
 	{
 		return new UnitBuilder( $this->request );
 	}
+
+    /**
+     * @return DepartmentBuilder()
+     */
+    public function departments() {
+        return new DepartmentBuilder( $this->request );
+    }
 
 	/**
 	 * @return mixed
