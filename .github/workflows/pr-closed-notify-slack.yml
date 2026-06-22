@@ -1,0 +1,42 @@
+name: PR Closed — Notify Slack
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    if: |
+      !contains(github.event.pull_request.labels.*.name, 'dependencies') &&
+      github.event.pull_request.user.type != 'Bot'
+
+    steps:
+      - name: Post to Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_PR_CLOSED_WEBHOOK_URL }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_STATUS: ${{ github.event.pull_request.merged == true && 'merged' || 'closed' }}
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg pr_url    "$PR_URL" \
+            --arg pr_status "$PR_STATUS" \
+            '{
+              pr_url:    $pr_url,
+              pr_status: $pr_status,
+            }')
+
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            --connect-timeout 10 \
+            --max-time 30 \
+            -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$PAYLOAD")
+
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "::error::Slack webhook failed (HTTP $HTTP_STATUS)"
+            exit 1
+          fi

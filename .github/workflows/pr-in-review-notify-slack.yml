@@ -1,0 +1,72 @@
+name: PR In Review — Notify Slack
+
+on:
+  pull_request:
+    types: [review_requested]
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    if: |
+      !github.event.pull_request.draft &&
+      !contains(github.event.pull_request.labels.*.name, 'dependencies') &&
+      github.event.requested_reviewer.type != 'Bot' &&
+      github.event.review.user.type != 'Bot'
+
+    steps:
+      - name: Resolve PR reviewer → Slack user ID
+        id: slack
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GITHUB_USER_REQUESTED: ${{ github.event.requested_reviewer.login }}
+          GITHUB_USER_REVIEWED: ${{ github.event.review.user.login }}
+          GITHUB_TO_SLACK: ${{ vars.SLACK_TO_GITHUB }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            GITHUB_USER="$GITHUB_USER_REQUESTED"
+          else
+            GITHUB_USER="$GITHUB_USER_REVIEWED"
+          fi
+
+          SLACK_ID=$(echo "$GITHUB_TO_SLACK" | jq -r --arg user "$GITHUB_USER" \
+            '.[] | select(.github == $user) | .slack')
+
+          if [ -z "$SLACK_ID" ]; then
+            echo "::warning::GitHub user '$GITHUB_USER' not found in SLACK_TO_GITHUB variable. Posting without Slack mention."
+          fi
+
+          echo "user_id=$SLACK_ID" >> $GITHUB_OUTPUT
+
+      - name: Post to Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_PR_REVIEW_WEBHOOK_URL }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_STATUS: ${{ github.event_name == 'pull_request' && 'review_requested' || github.event.review.state }}
+          SLACK_USER_ID: ${{ steps.slack.outputs.user_id }}
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg pr_url      "$PR_URL" \
+            --arg pr_status   "$PR_STATUS" \
+            --arg pr_reviewer "$SLACK_USER_ID" \
+            '{
+              pr_url:      $pr_url,
+              pr_status:   $pr_status,
+              pr_reviewer: $pr_reviewer,
+            }')
+
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            --connect-timeout 10 \
+            --max-time 30 \
+            -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$PAYLOAD")
+
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "::error::Slack webhook failed (HTTP $HTTP_STATUS)"
+            exit 1
+          fi
