@@ -15,6 +15,7 @@ jobs:
     if: |
       !github.event.pull_request.draft &&
       !contains(github.event.pull_request.labels.*.name, 'dependencies') &&
+      !contains(github.event.pull_request.labels.*.name, 'ignore-for-release') &&
       github.event.requested_reviewer.type != 'Bot' &&
       github.event.review.user.type != 'Bot'
 
