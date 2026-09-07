@@ -6,6 +6,7 @@ namespace Rackbeat\Utils;
 
 use Illuminate\Support\Str;
 
+#[\AllowDynamicProperties]
 class Model
 {
 	protected $entity;
